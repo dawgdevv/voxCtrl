@@ -163,7 +163,7 @@ func main() {
 	}()
 
 	// ── Ready ─────────────────────────────────────────────────────────────────
-	notifier.Info("VoxCtrl ready — hold Ctrl+Alt+V to speak")
+	notifier.Info("VoxCtrl ready — hold Alt+V to speak")
 	log.Println("[VoxCtrl] Daemon running. Ctrl+C to stop.")
 
 	sig := make(chan os.Signal, 1)

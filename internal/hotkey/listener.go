@@ -26,14 +26,17 @@ const (
 	keyPress   = 1 // value: key pressed
 	keyRelease = 0 // value: key released
 
-	keyLeftCtrl  = 29
-	keyRightCtrl = 97
-	keyLeftAlt   = 56
-	keyRightAlt  = 100
-	keyV         = 47 // KEY_V
+	keyLeftAlt  = 56
+	keyRightAlt = 100
+	keyV        = 47 // KEY_V
 
-	// Change this combo to whatever you prefer.
-	// Current: Ctrl + Alt + V
+	// Current hotkey: Alt + V
+	// To change: update keyTrigger to any key code you want.
+	// Common alternatives:
+	//   keyF9  = 67   → Alt+F9
+	//   keyF10 = 68   → Alt+F10
+	//   keySpace = 57 → Alt+Space
+	keyTrigger = keyV
 )
 
 // Listener watches /dev/input for the global hotkey and signals press/release.
@@ -44,9 +47,8 @@ type Listener struct {
 	devicePath string // path to keyboard device e.g. /dev/input/event3
 
 	// internal state
-	ctrlHeld bool
-	altHeld  bool
-	active   bool // true while hotkey is being held
+	altHeld bool
+	active  bool // true while hotkey is being held
 }
 
 // NewListener creates a Listener. If devicePath is empty, it auto-detects
@@ -86,7 +88,7 @@ func (l *Listener) readLoop() error {
 	}
 	defer f.Close()
 
-	log.Printf("[hotkey] Listening on %s (Ctrl+Alt+V to activate)", l.devicePath)
+	log.Printf("[hotkey] Listening on %s (Alt+V to activate)", l.devicePath)
 
 	var ev inputEvent
 	for {
@@ -106,33 +108,38 @@ func (l *Listener) readLoop() error {
 
 // handleEvent updates modifier state and fires press/release signals.
 func (l *Listener) handleEvent(code uint16, value int32) {
-	// Track Ctrl modifier
-	if code == keyLeftCtrl || code == keyRightCtrl {
-		l.ctrlHeld = (value == keyPress || value == 2) // 2 = repeat
-	}
-
-	// Track Alt modifier
+	// Track Alt modifier (left or right Alt)
 	if code == keyLeftAlt || code == keyRightAlt {
-		l.altHeld = (value == keyPress || value == 2)
+		l.altHeld = (value == keyPress || value == 2) // 2 = auto-repeat
+
+		// If Alt is released while hotkey is active, treat as hotkey release.
+		// This handles the case where the user releases Alt before the trigger key.
+		if value == keyRelease && l.active {
+			l.active = false
+			log.Println("[hotkey] Alt released — stopping voice input")
+			select {
+			case l.release <- true:
+			default:
+			}
+		}
 	}
 
-	// Hotkey trigger key: V
-	if code == keyV {
-		if value == keyPress && l.ctrlHeld && l.altHeld && !l.active {
-			// Ctrl+Alt+V pressed — start recording
+	// Hotkey trigger key: V (or whatever keyTrigger is set to)
+	if code == keyTrigger {
+		if value == keyPress && l.altHeld && !l.active {
+			// Alt+V pressed — start recording
 			l.active = true
-			log.Println("[hotkey] Hotkey pressed — activating voice input")
+			log.Println("[hotkey] Alt+V pressed — activating voice input")
 			select {
 			case l.press <- true:
 			default:
-				// Channel full — pipeline still processing previous command
 				log.Println("[hotkey] Pipeline busy, ignoring press")
 				l.active = false
 			}
 		} else if value == keyRelease && l.active {
 			// V released — stop recording
 			l.active = false
-			log.Println("[hotkey] Hotkey released — stopping voice input")
+			log.Println("[hotkey] V released — stopping voice input")
 			select {
 			case l.release <- true:
 			default:
