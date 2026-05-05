@@ -1,9 +1,10 @@
 module github.com/dawgdevv/voxctrl
 
-go 1.25.7
+go 1.23.0
 
 require (
 	github.com/lithammer/fuzzysearch v1.1.8
+	github.com/mattn/go-sqlite3 v1.14.28
 	gopkg.in/yaml.v3 v3.0.1
 )
 

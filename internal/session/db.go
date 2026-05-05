@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Store struct {
@@ -50,7 +52,6 @@ func NewStore() (*Store, error) {
 }
 
 func migrate(db *sql.DB) error {
-	// Implementation for migrating the database
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS sessions(
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	timestamp DATETIME NOT NULL,
@@ -58,9 +59,9 @@ func migrate(db *sql.DB) error {
 	confidence REAL NOT NULL,
 	executed TEXT NOT NULL,
 	result TEXT NOT NULL,
-	active_window TEXT NOT NULL,
-	duration_ms INTEGER NOT NULL
-	context_json TEXT NOT NULL
+	active_window TEXT,
+	duration_ms INTEGER NOT NULL,
+	context_json TEXT
 )`)
 	if err != nil {
 		return fmt.Errorf("migrate db: %w", err)
@@ -84,7 +85,7 @@ func (e *Entry) Finish(err error) {
 }
 
 func (s *Store) Save(e *Entry) error {
-	_, err := s.db.Exec(`INSERT INTO sessions (timestamp, intent, confidence, executed, result, active_window, duration_ms, context_json) VALUES(?,?,?,?,?,?,?,?,?)`,
+	_, err := s.db.Exec(`INSERT INTO sessions (timestamp, intent, confidence, executed, result, active_window, duration_ms, context_json) VALUES(?,?,?,?,?,?,?,?)`,
 		time.Now().UTC(), e.Intent, e.Confidence, e.Executed, e.Result, e.ActiveWindow, e.DurationMs, e.ContextJson,
 	)
 	return err

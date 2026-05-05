@@ -8,7 +8,7 @@ Works on any Linux distribution — Ubuntu, Fedora, Arch, Debian, Manjaro, and m
 
 ## What It Does
 
-VoxCtrl sits silently in the background as a system daemon. When you press `Ctrl+Alt+V` and speak, it records your voice, transcribes it locally using Whisper, matches it to a command, and runs it — all in under 1.5 seconds.
+VoxCtrl sits silently in the background as a system daemon. When you press `Alt+V` and speak, it records your voice, transcribes it locally using Whisper, matches it to a command, and runs it — all in under 1.5 seconds.
 
 Every interaction is logged to a local SQLite database with full context: what you said, what ran, which window was active, which git branch you were on, and how long it took.
 
@@ -17,7 +17,7 @@ Every interaction is logged to a local SQLite database with full context: what y
 ## How It Works
 
 ```
-Hold Ctrl+Alt+V  →  speak  →  release  →  command executes
+Hold Alt+V  →  speak  →  release  →  command executes
 ```
 
 Internally, five subsystems chain together via Go channels:

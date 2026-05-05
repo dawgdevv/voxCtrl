@@ -87,9 +87,6 @@ func (r *Recorder) Record(stop <-chan bool) (string, error) {
 		log.Printf("[audio] Warning: could not stop arecord cleanly: %v", err)
 	}
 
-	// Wait for process to exit so the WAV file is fully flushed to disk
-	_ = cmd.Wait()
-
 	// Discard recordings shorter than minDuration — likely accidental trigger
 	if elapsed < minDuration {
 		_ = os.Remove(wavPath)

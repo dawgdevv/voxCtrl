@@ -1,0 +1,14 @@
+[Unit]
+Description=VoxCtrl — Local Voice Command Daemon
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/voxctrl
+Restart=on-failure
+RestartSec=5
+Environment="HOME=%h"
+Environment="XDG_RUNTIME_DIR=/run/user/%U"
+
+[Install]
+WantedBy=default.target

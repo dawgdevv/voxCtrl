@@ -36,5 +36,5 @@ func cleanTranscript(raw string) string {
 
 		lines = append(lines, line)
 	}
-	return strings.TrimSpace(strings.Join(lines, ""))
+	return strings.TrimSpace(strings.Join(lines, " "))
 }
