@@ -3,28 +3,26 @@ package executor
 import (
 	"log"
 
-	"github.com/dawgdevv/voxctrl/internal/notify"
+	"github.com/dawgdevv/voxctrl/internal/tray"
 )
 
 type Runner struct {
-	notifier *notify.Notifier
+	tray *tray.Tray
 }
 
-func NewRunner(n *notify.Notifier) *Runner {
-	return &Runner{notifier: n}
+func NewRunner(t *tray.Tray) *Runner {
+	return &Runner{tray: t}
 }
 
 func (r *Runner) Run(action Action) error {
-
 	err := action.Execute()
-
 	if err != nil {
 		log.Printf("[Runner] Error executing action %q: %v", action.Name(), err)
-		r.notifier.Error("Failed to execute action: " + action.Name())
+		r.tray.Error(action.Name() + ": " + err.Error())
 		return err
 	}
 
 	log.Printf("[Runner] Successfully executed action %q", action.Name())
-	r.notifier.Success("Executed action: " + action.Name())
+	r.tray.Success(action.Name())
 	return nil
 }

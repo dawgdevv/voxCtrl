@@ -118,3 +118,58 @@ func TestParserResolveReturnsShellAction(t *testing.T) {
 		t.Errorf("unexpected description: %s", sa.Description())
 	}
 }
+
+func TestParserResolveStripsPunctuation(t *testing.T) {
+	reg := &Registry{
+		Commands: []CommandDef{
+			{Name: "open spotify", Aliases: []string{"launch spotify"}, Exec: "spotify &"},
+		},
+	}
+	p := NewParser(reg)
+
+	// Trailing period — the exact failure case from the user
+	action, confidence, err := p.Resolve("Open Spotify.")
+	if err != nil {
+		t.Fatalf("expected match after stripping period, got error: %v", err)
+	}
+	if action == nil || action.Name() != "open spotify" {
+		t.Fatalf("expected 'open spotify', got %v", action)
+	}
+	if confidence < 0.75 {
+		t.Errorf("expected confidence >= 0.75, got %.2f", confidence)
+	}
+}
+
+func TestParserResolveStripsMultiplePunctuation(t *testing.T) {
+	reg := &Registry{
+		Commands: []CommandDef{
+			{Name: "take screenshot", Aliases: []string{}, Exec: "gnome-screenshot"},
+		},
+	}
+	p := NewParser(reg)
+
+	action, _, err := p.Resolve("Take Screenshot!!!")
+	if err != nil {
+		t.Fatalf("expected match after stripping punctuation, got error: %v", err)
+	}
+	if action == nil || action.Name() != "take screenshot" {
+		t.Fatalf("expected 'take screenshot', got %v", action)
+	}
+}
+
+func TestParserResolveStripsComma(t *testing.T) {
+	reg := &Registry{
+		Commands: []CommandDef{
+			{Name: "git status", Aliases: []string{}, Exec: "git status"},
+		},
+	}
+	p := NewParser(reg)
+
+	action, _, err := p.Resolve("git status, please")
+	if err != nil {
+		t.Fatalf("expected match after stripping comma, got error: %v", err)
+	}
+	if action == nil || action.Name() != "git status" {
+		t.Fatalf("expected 'git status', got %v", action)
+	}
+}

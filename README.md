@@ -10,7 +10,7 @@ Works on any Linux distribution — Ubuntu, Fedora, Arch, Debian, Manjaro, and m
 
 VoxCtrl sits silently in the background as a system daemon. When you press `Alt+V` and speak, it records your voice, transcribes it locally using Whisper, matches it to a command, and runs it — all in under 1.5 seconds.
 
-Every interaction is logged to a local SQLite database with full context: what you said, what ran, which window was active, which git branch you were on, and how long it took.
+Every interaction is logged to a local SQLite database with full context: what you said, what ran, which window was active, and how long it took.
 
 ---
 
@@ -23,39 +23,46 @@ Hold Alt+V  →  speak  →  release  →  command executes
 Internally, five subsystems chain together via Go channels:
 
 ```
-Hotkey Listener → Audio Capture → Whisper STT → Intent Parser → Command Executor
-                                                                        ↓
+Hotkey Listener → Audio Capture → Whisper Server → Intent Parser → Command Executor
+                                    (HTTP, resident)                     ↓
                                                                Session Logger (SQLite)
 ```
 
 Each subsystem is a separate Go package with a clean interface. The hotkey listener reads directly from `/dev/input` via evdev — no dependency on X11 or any display server. This is what makes VoxCtrl work identically across all Linux environments.
 
+> **Note on STT latency:** VoxCtrl starts a `whisper-server` on startup and keeps the model resident in RAM. Audio is sent over HTTP for transcription — no per-command model reload. If the server binary is missing, it automatically falls back to `whisper-cli` (slower but works).
+
 ---
 
 ## What You Can Say
-
-**Developer Tools**
-- `"open vscode"` — launches VSCode in the current directory
-- `"open terminal"` — opens a new terminal window
-- `"open browser"` — launches your default browser
 
 **System**
 - `"lock screen"` — locks the session
 - `"volume up"` / `"volume down"` — adjusts system volume
 - `"mute"` — toggles mute
 - `"take screenshot"` — captures the screen
+- `"screenshot area"` — captures a selected region
 
-**Git**
-- `"git status"` — shows short status as a desktop notification
-- `"git pull"` — pulls latest from current branch
-- `"what branch"` — notifies you of the current branch
+**Apps**
+- `"open terminal"` — opens a new terminal window
+- `"open browser"` — launches Firefox
+- `"open files"` — opens the file manager
+- `"open calendar"` — opens the calendar
+- `"open calculator"` — opens the calculator
 
-**Docker**
-- `"docker up"` — runs `docker-compose up -d` in the current directory
-- `"docker down"` — runs `docker-compose down`
-- `"docker status"` — shows running containers in a notification
+**Spotify / Media**
+- `"open spotify"` — launches Spotify
+- `"play music"` / `"pause music"` — controls playback
+- `"next song"` / `"previous song"` — skips tracks
+- `"now playing"` — shows the current artist and title
 
-Commands are fuzzy-matched, so `"hey open vs code"` and `"launch vscode"` both work. All commands are defined in `config/commands.yaml` — edit the file and changes take effect immediately without restarting the daemon.
+**System Info**
+- `"show ip"` — displays your local IP
+- `"show memory"` — shows RAM usage
+- `"show disk usage"` — shows disk space
+- `"show uptime"` — shows how long the system has been running
+
+Commands are fuzzy-matched, so `"hey open spotify"` and `"launch browser"` both work. All commands are defined in `config/commands.yaml` — edit the file and changes take effect immediately without restarting the daemon.
 
 ---
 
@@ -65,12 +72,11 @@ Every command creates a record in `~/.local/share/voxctrl/sessions.db`:
 
 | Field | Example |
 |---|---|
-| Transcript | `"open vscode"` |
-| Matched intent | `open vscode` |
+| Transcript | `"open spotify"` |
+| Matched intent | `open spotify` |
 | Match confidence | `0.94` |
 | Result | `success` |
 | Active window | `Terminal` |
-| Git branch | `main` |
 | Pipeline latency | `1243ms` |
 
 ---
@@ -97,7 +103,7 @@ The Whisper model loads once at startup and stays resident. There is no per-comm
 |---|---|
 | Linux kernel 4.x+ | evdev input support |
 | ALSA or PipeWire | Microphone capture |
-| A notification daemon | Desktop notifications (any DE ships one) |
+| GTK3 + Ayatana AppIndicator Glib | System tray icon (ships with GNOME, KDE, XFCE) |
 | User in `input` group | Read from `/dev/input` for hotkey detection |
 
 **Tools**
@@ -105,10 +111,15 @@ The Whisper model loads once at startup and stays resident. There is no per-comm
 | Tool | Install |
 |---|---|
 | Go 1.21+ | See below |
-| whisper-cli | Build from [whisper.cpp](https://github.com/ggml-org/whisper.cpp) |
+| whisper-cli / whisper-server | Build from [whisper.cpp](https://github.com/ggml-org/whisper.cpp) |
 | arecord | `alsa-utils` package |
-| notify-send | `libnotify` package |
 | ffmpeg | `ffmpeg` package |
+
+**Build dependency**
+
+| Package | Install |
+|---|---|
+| `libayatana-appindicator-glib-dev` | `sudo apt install libayatana-appindicator-glib-dev` |
 
 ---
 
@@ -118,16 +129,16 @@ The Whisper model loads once at startup and stays resident. There is no per-comm
 
 ```bash
 # Debian / Ubuntu
-sudo apt install -y golang-go alsa-utils libnotify-bin ffmpeg build-essential cmake git
+sudo apt install -y golang-go alsa-utils libayatana-appindicator-glib-dev ffmpeg build-essential cmake git
 
 # Fedora / RHEL
-sudo dnf install -y golang alsa-utils libnotify ffmpeg cmake git gcc gcc-c++
+sudo dnf install -y golang alsa-utils libayatana-appindicator-glib-devel ffmpeg cmake git gcc gcc-c++
 
 # Arch / Manjaro
-sudo pacman -S go alsa-utils libnotify ffmpeg cmake git base-devel
+sudo pacman -S go alsa-utils libayatana-appindicator-glib ffmpeg cmake git base-devel
 
 # openSUSE
-sudo zypper install go alsa-utils libnotify-tools ffmpeg cmake git gcc
+sudo zypper install go alsa-utils libayatana-appindicator-glib-devel ffmpeg cmake git gcc
 ```
 
 **Step 2 — Add yourself to the input group** (required for hotkey detection)
@@ -146,6 +157,7 @@ cmake -B build && cmake --build build -j$(nproc) --config Release
 bash models/download-ggml-model.sh base.en
 sudo mkdir -p /usr/local/share/whisper
 sudo cp ./build/bin/whisper-cli /usr/local/bin/whisper-cli
+sudo cp ./build/bin/whisper-server /usr/local/bin/whisper-server
 sudo cp models/ggml-base.en.bin /usr/local/share/whisper/ggml-base.en.bin
 cd ..
 ```
@@ -200,13 +212,13 @@ VoxCtrl uses evdev (`/dev/input`) for hotkey detection — it has no dependency 
 All commands live in `config/commands.yaml`:
 
 ```yaml
-- name: open vscode
-  aliases: ["open vs code", "launch vscode", "start vscode"]
-  exec: "code ."
+- name: open spotify
+  aliases: ["launch spotify", "play music", "open music"]
+  exec: "spotify &"
 
-- name: git status
-  aliases: ["show git status", "what's the status"]
-  exec: "notify-send 'Git Status' \"$(git status --short 2>&1)\""
+- name: take screenshot
+  aliases: ["screenshot", "capture screen"]
+  exec: "gnome-screenshot &"
 ```
 
 Add a new entry, save the file — the daemon hot-reloads it within 2 seconds. No restart needed.
@@ -225,7 +237,7 @@ voxctrl/
 │   ├── intent/                  # Fuzzy command matching + YAML registry
 │   ├── executor/                # Action interface + shell command runner
 │   ├── session/                 # SQLite session logging
-│   └── notify/                  # Desktop notification wrapper
+│   └── tray/                    # System tray icon + log viewer
 ├── config/commands.yaml         # Command definitions
 └── deploy/voxctrl.service       # systemd unit file
 ```
@@ -237,12 +249,12 @@ voxctrl/
 | Layer | Technology |
 |---|---|
 | Language | Go |
-| Speech-to-text | whisper.cpp (local, CPU-only) |
+| Speech-to-text | whisper.cpp server (HTTP, model stays resident) |
 | Hotkey detection | evdev (kernel input, X11 + Wayland) |
 | Audio capture | arecord (ALSA) |
 | Command matching | Fuzzy search (Levenshtein distance) |
 | Session storage | SQLite |
-| Notifications | libnotify |
+| System tray | GTK / Ayatana AppIndicator (native Go) |
 | Service management | systemd user service |
 
 ---

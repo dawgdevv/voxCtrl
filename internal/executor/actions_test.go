@@ -1,7 +1,9 @@
 package executor
 
 import (
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewShellAction(t *testing.T) {
@@ -32,5 +34,23 @@ func TestShellActionUndo(t *testing.T) {
 	a := NewShellAction("test", "echo hello")
 	if err := a.Undo(); err == nil {
 		t.Error("expected undo to return error")
+	}
+}
+
+func TestShellActionTimeout(t *testing.T) {
+	// Sleep longer than the 15s timeout
+	a := NewShellAction("sleep", "sleep 20")
+	start := time.Now()
+	err := a.Execute()
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("expected timeout error")
+	}
+	if elapsed > 20*time.Second {
+		t.Errorf("should have timed out before 20s, took %v", elapsed)
+	}
+	if !strings.Contains(err.Error(), "timed out") {
+		t.Errorf("expected timeout message, got: %v", err)
 	}
 }

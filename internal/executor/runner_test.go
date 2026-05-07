@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dawgdevv/voxctrl/internal/notify"
+	"github.com/dawgdevv/voxctrl/internal/tray"
 )
 
 type mockAction struct {
@@ -18,7 +18,7 @@ func (m *mockAction) Execute() error      { return m.execute() }
 func (m *mockAction) Undo() error         { return nil }
 
 func TestRunnerRunSuccess(t *testing.T) {
-	r := NewRunner(notify.New())
+	r := NewRunner(tray.New())
 	called := false
 	a := &mockAction{
 		name: "success-action",
@@ -38,7 +38,7 @@ func TestRunnerRunSuccess(t *testing.T) {
 }
 
 func TestRunnerRunFailure(t *testing.T) {
-	r := NewRunner(notify.New())
+	r := NewRunner(tray.New())
 	a := &mockAction{
 		name: "fail-action",
 		execute: func() error {

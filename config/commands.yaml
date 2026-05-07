@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# VoxCtrl — Command Registry v1.0
+# VoxCtrl — Command Registry
 # ─────────────────────────────────────────────────────────────────────────────
 #
 # Structure of each entry:
@@ -9,70 +9,7 @@
 #
 # Hot-reload: edit this file while the daemon is running — changes take
 # effect within 2 seconds. No restart needed.
-#
-# Tips:
-#   - aliases are fuzzy matched, so minor speech variations work automatically
-#   - exec runs in your home directory by default
-#   - use $(xdotool getactivewindow ...) for window-aware commands
-#   - notify-send displays output as a desktop notification
 # ─────────────────────────────────────────────────────────────────────────────
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# DEVELOPER TOOLS
-# ═════════════════════════════════════════════════════════════════════════════
-
-- name: open vscode
-  aliases:
-    - open vs code
-    - launch vscode
-    - launch vs code
-    - start vscode
-    - code editor
-    - open editor
-  exec: "code ."
-
-- name: open terminal
-  aliases:
-    - new terminal
-    - launch terminal
-    - open console
-    - start terminal
-    - terminal please
-  exec: "gnome-terminal"
-
-- name: open browser
-  aliases:
-    - launch browser
-    - open firefox
-    - start browser
-    - open internet
-    - launch firefox
-  exec: "firefox"
-
-- name: open files
-  aliases:
-    - open file manager
-    - launch nautilus
-    - open folder
-    - file explorer
-    - open nautilus
-  exec: "nautilus"
-
-- name: open postman
-  aliases:
-    - launch postman
-    - start postman
-    - open api client
-  exec: "postman"
-
-- name: open dbeaver
-  aliases:
-    - launch dbeaver
-    - open database
-    - open db client
-    - database client
-  exec: "dbeaver"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -118,7 +55,7 @@
     - capture screen
     - grab screenshot
     - snap screen
-  exec: "gnome-screenshot"
+  exec: "gnome-screenshot &"
 
 - name: screenshot area
   aliases:
@@ -126,7 +63,7 @@
     - screenshot selection
     - select screenshot
     - grab area
-  exec: "gnome-screenshot -a"
+  exec: "gnome-screenshot -a &"
 
 - name: empty trash
   aliases:
@@ -141,214 +78,39 @@
     - task manager
     - show processes
     - process monitor
-  exec: "gnome-system-monitor"
+  exec: "gnome-system-monitor &"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# GIT
+# APP LAUNCHERS
 # ═════════════════════════════════════════════════════════════════════════════
 
-- name: git status
+- name: open terminal
   aliases:
-    - show git status
-    - what is the git status
-    - git state
-    - check git
-    - whats changed
-  exec: "notify-send 'Git Status' \"$(git status --short 2>&1 || echo 'Not a git repo')\""
+    - new terminal
+    - launch terminal
+    - open console
+    - start terminal
+    - terminal please
+  exec: "gnome-terminal &"
 
-- name: git pull
+- name: open browser
   aliases:
-    - pull latest
-    - git pull origin
-    - pull changes
-    - fetch latest
-    - update repo
-  exec: "git pull && notify-send 'Git' 'Pull complete'"
+    - launch browser
+    - open firefox
+    - start browser
+    - open internet
+    - launch firefox
+  exec: "firefox &"
 
-- name: git push
+- name: open files
   aliases:
-    - push changes
-    - git push origin
-    - push code
-    - push commits
-  exec: "git push && notify-send 'Git' 'Push complete'"
-
-- name: what branch
-  aliases:
-    - current branch
-    - which branch
-    - show branch
-    - git branch
-  exec: "notify-send 'Git Branch' \"$(git branch --show-current 2>&1 || echo 'Not a git repo')\""
-
-- name: git log
-  aliases:
-    - show git log
-    - recent commits
-    - git history
-    - last commits
-  exec: "notify-send 'Git Log' \"$(git log --oneline -8 2>&1 || echo 'Not a git repo')\""
-
-- name: git stash
-  aliases:
-    - stash changes
-    - save stash
-    - git stash save
-  exec: "git stash && notify-send 'Git' 'Changes stashed'"
-
-- name: git stash pop
-  aliases:
-    - pop stash
-    - restore stash
-    - unstash
-    - apply stash
-  exec: "git stash pop && notify-send 'Git' 'Stash applied'"
-
-- name: git diff
-  aliases:
-    - show diff
-    - what changed
-    - show changes
-    - git changes
-  exec: "notify-send 'Git Diff' \"$(git diff --stat 2>&1 || echo 'Not a git repo')\""
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# DOCKER
-# ═════════════════════════════════════════════════════════════════════════════
-
-- name: docker up
-  aliases:
-    - start docker
-    - docker compose up
-    - bring docker up
-    - start containers
-    - compose up
-  exec: "docker-compose up -d && notify-send 'Docker' 'Containers started'"
-
-- name: docker down
-  aliases:
-    - stop docker
-    - docker compose down
-    - bring docker down
-    - stop containers
-    - compose down
-  exec: "docker-compose down && notify-send 'Docker' 'Containers stopped'"
-
-- name: docker status
-  aliases:
-    - show containers
-    - list containers
-    - docker ps
-    - running containers
-    - what containers
-  exec: "notify-send 'Docker Containers' \"$(docker ps --format '{{.Names}} — {{.Status}}' 2>&1)\""
-
-- name: docker logs
-  aliases:
-    - show docker logs
-    - container logs
-    - docker compose logs
-    - tail logs
-  exec: "gnome-terminal -- bash -c 'docker-compose logs --tail=50 -f; read'"
-
-- name: docker restart
-  aliases:
-    - restart containers
-    - restart docker
-    - bounce docker
-  exec: "docker-compose restart && notify-send 'Docker' 'Containers restarted'"
-
-- name: docker build
-  aliases:
-    - build docker
-    - docker compose build
-    - rebuild containers
-    - build image
-  exec: "gnome-terminal -- bash -c 'docker-compose build; read'"
-
-- name: docker prune
-  aliases:
-    - clean docker
-    - prune docker
-    - remove unused containers
-    - docker cleanup
-  exec: "docker system prune -f && notify-send 'Docker' 'System pruned'"
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# NODE / NPM
-# ═════════════════════════════════════════════════════════════════════════════
-
-- name: npm install
-  aliases:
-    - install dependencies
-    - npm i
-    - install packages
-    - install node modules
-  exec: "gnome-terminal -- bash -c 'npm install; read'"
-
-- name: npm start
-  aliases:
-    - start dev server
-    - npm run start
-    - start node
-    - run dev
-    - start server
-  exec: "gnome-terminal -- bash -c 'npm start; read'"
-
-- name: npm build
-  aliases:
-    - build project
-    - npm run build
-    - build app
-    - compile project
-  exec: "gnome-terminal -- bash -c 'npm run build; read'"
-
-- name: npm test
-  aliases:
-    - run tests
-    - npm run test
-    - run unit tests
-    - test project
-  exec: "gnome-terminal -- bash -c 'npm test; read'"
-
-
-# ═════════════════════════════════════════════════════════════════════════════
-# GO
-# ═════════════════════════════════════════════════════════════════════════════
-
-- name: go build
-  aliases:
-    - build go
-    - go compile
-    - compile go
-    - build binary
-  exec: "gnome-terminal -- bash -c 'go build ./...; read'"
-
-- name: go test
-  aliases:
-    - test go
-    - run go tests
-    - go run tests
-    - test all
-  exec: "gnome-terminal -- bash -c 'go test ./...; read'"
-
-- name: go run
-  aliases:
-    - run go
-    - start go
-    - go run main
-  exec: "gnome-terminal -- bash -c 'go run ./cmd/...; read'"
-
-- name: go mod tidy
-  aliases:
-    - tidy go modules
-    - go tidy
-    - clean go modules
-    - tidy dependencies
-  exec: "go mod tidy && notify-send 'Go' 'Modules tidied'"
+    - open file manager
+    - launch nautilus
+    - open folder
+    - file explorer
+    - open nautilus
+  exec: "nautilus &"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -362,7 +124,7 @@
     - show ip address
     - check ip
     - local ip
-  exec: "notify-send 'IP Address' \"$(hostname -I | awk '{print $1}')\""
+  exec: "hostname -I | awk '{print $1}'"
 
 - name: show disk usage
   aliases:
@@ -371,7 +133,7 @@
     - disk usage
     - storage usage
     - check disk
-  exec: "notify-send 'Disk Usage' \"$(df -h / | tail -1 | awk '{print \"Used: \" $3 \" / \" $2 \" (\" $5 \")\"}')\""
+  exec: "df -h / | tail -1 | awk '{print \"Used: \" $3 \" / \" $2 \" (\" $5 \")\"}'"
 
 - name: show memory
   aliases:
@@ -380,7 +142,7 @@
     - ram usage
     - check memory
     - free memory
-  exec: "notify-send 'Memory' \"$(free -h | awk '/^Mem:/ {print \"Used: \" $3 \" / \" $2}')\""
+  exec: "free -h | awk '/^Mem:/ {print \"Used: \" $3 \" / \" $2}'"
 
 - name: show uptime
   aliases:
@@ -388,7 +150,7 @@
     - how long running
     - uptime
     - check uptime
-  exec: "notify-send 'Uptime' \"$(uptime -p)\""
+  exec: "uptime -p"
 
 - name: check ports
   aliases:
@@ -396,7 +158,7 @@
     - listening ports
     - open ports
     - network ports
-  exec: "notify-send 'Open Ports' \"$(ss -tlnp | awk 'NR>1 {print $4}' | head -10)\""
+  exec: "ss -tlnp | awk 'NR>1 {print $4}' | head -10"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -408,21 +170,74 @@
     - empty clipboard
     - wipe clipboard
     - reset clipboard
-  exec: "echo -n '' | xclip -selection clipboard && notify-send 'Clipboard' 'Cleared'"
+  exec: "echo -n '' | xclip -selection clipboard"
 
 - name: open calendar
   aliases:
     - show calendar
     - launch calendar
     - open gnome calendar
-  exec: "gnome-calendar"
+  exec: "gnome-calendar &"
 
 - name: open calculator
   aliases:
     - launch calculator
     - show calculator
     - open calc
-  exec: "gnome-calculator"
+  exec: "gnome-calculator &"
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# SPOTIFY / MEDIA
+# ═════════════════════════════════════════════════════════════════════════════
+
+- name: open spotify
+  aliases:
+    - launch spotify
+    - start spotify
+    - play music
+    - open music
+  exec: "spotify &"
+
+- name: pause music
+  aliases:
+    - pause
+    - pause song
+    - stop music
+    - pause spotify
+  exec: "playerctl pause"
+
+- name: play music
+  aliases:
+    - resume
+    - play
+    - resume music
+    - play song
+  exec: "playerctl play"
+
+- name: next song
+  aliases:
+    - next track
+    - skip
+    - skip song
+    - next music
+  exec: "playerctl next"
+
+- name: previous song
+  aliases:
+    - previous track
+    - go back
+    - last song
+    - prev track
+  exec: "playerctl previous"
+
+- name: now playing
+  aliases:
+    - what song
+    - current song
+    - what is playing
+    - song info
+  exec: "playerctl metadata --format '{{artist}} — {{title}}'"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -435,7 +250,7 @@
     - reload config
     - update commands
     - refresh config
-  exec: "pkill -SIGHUP voxctrl && notify-send 'VoxCtrl' 'Commands reloaded'"
+  exec: "pkill -SIGHUP voxctrl"
 
 - name: voxctrl status
   aliases:
@@ -443,7 +258,7 @@
     - is voxctrl running
     - voice status
     - check daemon
-  exec: "notify-send 'VoxCtrl' \"$(systemctl --user is-active voxctrl)\""
+  exec: "systemctl --user is-active voxctrl"
 
 - name: show session log
   aliases:
@@ -452,4 +267,4 @@
     - session history
     - what did i say
     - recent commands
-  exec: "notify-send 'Recent Commands' \"$(sqlite3 ~/.local/share/voxctrl/sessions.db 'SELECT intent FROM sessions ORDER BY id DESC LIMIT 8' 2>&1)\""
+  exec: "sqlite3 ~/.local/share/voxctrl/sessions.db 'SELECT intent FROM sessions ORDER BY id DESC LIMIT 8'"
