@@ -7,7 +7,7 @@ import (
 
 	"github.com/dawgdevv/voxctrl/internal/executor"
 
-	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/hbollon/go-edlib"
 )
 
 type Parser struct {
@@ -27,7 +27,25 @@ func normalize(s string) string {
 			b.WriteRune(r)
 		}
 	}
-	return b.String()
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+func runeLen(s string) int {
+	return len([]rune(s))
+}
+
+func tooFar(a, b string) bool {
+	dist := edlib.DamerauLevenshteinDistance(a, b)
+	maxLen := runeLen(a)
+
+	if runeLen(b) > maxLen {
+		maxLen = runeLen(b)
+	}
+
+	if maxLen == 0 {
+		return false
+	}
+	return dist > maxLen/2
 }
 
 func (p *Parser) Resolve(transcription string) (executor.Action, float64, error) {
@@ -40,19 +58,22 @@ func (p *Parser) Resolve(transcription string) (executor.Action, float64, error)
 	bestScore := 0.0
 
 	for _, cmd := range p.registry.Commands {
-		targets := append([]string{normalize(cmd.Name)}, cmd.Aliases...)
+		targets := make([]string, 0, len(cmd.Aliases)+1)
+		targets = append(targets, normalize(cmd.Name))
+		for _, alias := range cmd.Aliases {
+			if n := normalize(alias); n != "" {
+				targets = append(targets, n)
+			}
+		}
+
 		for _, target := range targets {
-			target = normalize(target)
-			if target == "" {
+			if tooFar(input, target) {
 				continue
 			}
-
-			if fuzzy.Match(input, target) || fuzzy.Match(target, input) {
-				score := matchScore(input, target)
-				if score > bestScore {
-					bestScore = score
-					bestAction = executor.NewShellAction(cmd.Name, cmd.Exec)
-				}
+			score := matchScore(input, target)
+			if score > bestScore {
+				bestScore = score
+				bestAction = executor.NewShellAction(cmd.Name, cmd.Exec)
 			}
 		}
 	}
@@ -66,24 +87,5 @@ func (p *Parser) Resolve(transcription string) (executor.Action, float64, error)
 // matchScore returns a confidence between 0 and 1.
 // Exact match after normalization = 1.0.
 func matchScore(a, b string) float64 {
-	if a == b {
-		return 1.0
-	}
-	// Use the longer string as the denominator so the score
-	// reflects how much of the longer text is covered.
-	maxLen := len(a)
-	if len(b) > maxLen {
-		maxLen = len(b)
-	}
-	if maxLen == 0 {
-		return 0
-	}
-	// Simple overlap: number of matching runes in order.
-	// This is a rough proxy; fuzzysearch doesn't expose a ratio,
-	// so we approximate with length ratio for substring matches.
-	minLen := len(a)
-	if len(b) < minLen {
-		minLen = len(b)
-	}
-	return float64(minLen) / float64(maxLen)
+	return float64(edlib.JaroWinklerSimilarity(a, b))
 }
