@@ -195,7 +195,6 @@
   aliases:
     - launch spotify
     - start spotify
-    - open spotify
     - play music
     - open music
   exec: "spotify"
