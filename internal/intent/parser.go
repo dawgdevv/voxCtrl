@@ -18,6 +18,8 @@ func NewParser(r *Registry) *Parser {
 	return &Parser{registry: r}
 }
 
+const confidenceThreshold = 0.82
+
 // normalize strips punctuation and lowercases a string so that
 // spoken transcripts like "Open Spotify." match "open spotify".
 func normalize(s string) string {
@@ -45,7 +47,54 @@ func tooFar(a, b string) bool {
 	if maxLen == 0 {
 		return false
 	}
-	return dist > maxLen/2
+
+	var threshold int
+
+	switch {
+	case maxLen <= 4:
+		threshold = 1
+	case maxLen <= 8:
+		threshold = 2
+	case maxLen <= 12:
+		threshold = 3
+	default:
+		threshold = maxLen / 3
+	}
+
+	return dist > threshold
+}
+
+func tokenMatch(input, target string) float64 {
+	inputWords := strings.Fields(input)
+	targetWords := strings.Fields(target)
+	targetLen := len(targetWords)
+
+	if len(inputWords) > targetLen {
+		return 0
+	}
+
+	best := 0.0
+
+	for windowSize := targetLen - 1; windowSize <= targetLen+1; windowSize-- {
+		if windowSize < 0 {
+			continue
+		}
+
+		for start := 0; start <= len(inputWords)-windowSize; start++ {
+			window := strings.Join(inputWords[start:start+windowSize], " ")
+			score := float64(edlib.JaroWinklerSimilarity(window, target))
+			if score > best {
+				best = score
+			}
+
+		}
+	}
+
+	full := float64(edlib.JaroWinklerSimilarity(input, target))
+	if full > best {
+		return full
+	}
+	return best
 }
 
 func (p *Parser) Resolve(transcription string) (executor.Action, float64, error) {
@@ -78,8 +127,8 @@ func (p *Parser) Resolve(transcription string) (executor.Action, float64, error)
 		}
 	}
 
-	if bestAction == nil {
-		return nil, 0, fmt.Errorf("no match")
+	if bestAction == nil || bestScore < confidenceThreshold {
+		return nil, 0, fmt.Errorf("no match for query: %q", transcription)
 	}
 	return bestAction, bestScore, nil
 }
@@ -87,5 +136,5 @@ func (p *Parser) Resolve(transcription string) (executor.Action, float64, error)
 // matchScore returns a confidence between 0 and 1.
 // Exact match after normalization = 1.0.
 func matchScore(a, b string) float64 {
-	return float64(edlib.JaroWinklerSimilarity(a, b))
+	return tokenMatch(a, b)
 }

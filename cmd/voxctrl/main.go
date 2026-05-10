@@ -131,8 +131,8 @@ func main() {
 	go func() {
 		for text := range transcript {
 			action, confidence, err := parser.Resolve(text)
-			if err != nil || confidence < 0.75 {
-				log.Printf("[intent] No match for %q (confidence=%.2f)", text, confidence)
+			if err != nil {
+				log.Printf("[intent] No match for %q", text)
 				trayMgr.Error("Not recognised: \"" + text + "\"")
 				continue
 			}

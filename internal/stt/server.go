@@ -2,6 +2,7 @@ package stt
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -79,7 +80,10 @@ func (s *ServerWhisper) Transcribe(wavPath string) (string, error) {
 		return "", fmt.Errorf("build request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", s.baseURL+"/inference", body)
+	ctxt, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctxt, "POST", s.baseURL+"/inference", body)
 	if err != nil {
 		return "", err
 	}

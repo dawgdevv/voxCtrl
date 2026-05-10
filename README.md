@@ -1,6 +1,6 @@
 # VoxCtrl
 
-A local, always-on voice command daemon for Linux developers. Press a hotkey, speak a command, watch it execute. No cloud. No internet. No data leaves your machine.
+A local, always-on voice command daemon for Linux. Press a hotkey, speak a command, watch it execute. No cloud. No internet. No data leaves your machine.
 
 Works on any Linux distribution — Ubuntu, Fedora, Arch, Debian, Manjaro, and more. Compatible with both X11 and Wayland.
 
