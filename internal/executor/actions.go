@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -34,7 +37,8 @@ func (a *ShellAction) Execute() error {
 	ctx, cancel := context.WithTimeout(context.Background(), cmdTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "bash", "-l", "-c", a.command)
+	cmd := exec.CommandContext(ctx, "bash", "-c", a.command)
+	cmd.Env = os.Environ()
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -46,6 +50,12 @@ func (a *ShellAction) Execute() error {
 	}
 	if err != nil {
 		return fmt.Errorf("%w (stdout: %q, stderr: %q)", err, stdout.String(), stderr.String())
+	}
+	if out := strings.TrimSpace(stdout.String()); out != "" {
+		log.Printf("[exec] %s stdout: %s", a.name, out)
+	}
+	if out := strings.TrimSpace(stderr.String()); out != "" {
+		log.Printf("[exec] %s stderr: %s", a.name, out)
 	}
 	return nil
 }
