@@ -17,20 +17,26 @@ import (
 // This avoids the ~300-800ms model reload cost on every command.
 type ServerWhisper struct {
 	modelPath string
-	serverBin string // e.g. "whisper-server" or full path
+	serverBin string
+	threads   string
+	beamSize  string
+	gpuLayers string
 	serverCmd *exec.Cmd
 	client    *http.Client
 	baseURL   string
 }
 
 // NewServerWhisper creates a ServerWhisper. serverBin can be "" to use "whisper-server" from PATH.
-func NewServerWhisper(modelPath, serverBin string) *ServerWhisper {
+func NewServerWhisper(modelPath, serverBin string, threads, beamSize, gpuLayers int) *ServerWhisper {
 	if serverBin == "" {
 		serverBin = "whisper-server"
 	}
 	return &ServerWhisper{
 		modelPath: modelPath,
 		serverBin: serverBin,
+		threads:   fmt.Sprintf("%d", threads),
+		beamSize:  fmt.Sprintf("%d", beamSize),
+		gpuLayers: fmt.Sprintf("%d", gpuLayers),
 		client:    &http.Client{Timeout: 30 * time.Second},
 		baseURL:   "http://127.0.0.1:8080",
 	}
@@ -38,13 +44,19 @@ func NewServerWhisper(modelPath, serverBin string) *ServerWhisper {
 
 // Start launches whisper-server and blocks until it is accepting requests.
 func (s *ServerWhisper) Start() error {
-	s.serverCmd = exec.Command(s.serverBin,
+	args := []string{
 		"-m", s.modelPath,
 		"--host", "127.0.0.1",
 		"--port", "8080",
+		"-t", s.threads,
+		"-bs", s.beamSize,
 		"--no-timestamps",
 		"--language", "en",
-	)
+	}
+	if s.gpuLayers != "0" {
+		args = append(args, "-ngl", s.gpuLayers)
+	}
+	s.serverCmd = exec.Command(s.serverBin, args...)
 	s.serverCmd.Stdout = os.Stdout
 	s.serverCmd.Stderr = os.Stderr
 

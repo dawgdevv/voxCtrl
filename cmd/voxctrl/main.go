@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
+	"strconv"
 	"syscall"
 
 	"github.com/dawgdevv/voxctrl/internal/audio"
@@ -42,16 +44,20 @@ func main() {
 	runner := executor.NewRunner(trayMgr)
 
 	// ── Transcriber: prefer resident whisper-server, fall back to CLI ─────────
-	modelPath := "/usr/local/share/whisper/ggml-base.en.bin"
+	modelPath := envWithDefault("VOXCTRL_MODEL", "/usr/local/share/whisper/ggml-base.en.bin")
+	threads := envIntWithDefault("VOXCTRL_WHISPER_THREADS", runtime.NumCPU())
+	beamSize := envIntWithDefault("VOXCTRL_WHISPER_BEAM", 1)
+	gpuLayers := envIntWithDefault("VOXCTRL_GPU_LAYERS", 0)
+
 	var transcriber stt.Transcriber
 
-	serverWhisper := stt.NewServerWhisper(modelPath, "")
+	serverWhisper := stt.NewServerWhisper(modelPath, "", threads, beamSize, gpuLayers)
 	if err := serverWhisper.Start(); err != nil {
 		log.Printf("[stt] Server mode unavailable (%v), falling back to whisper-cli", err)
 		trayMgr.Logf("STT: falling back to whisper-cli (server unavailable)")
-		transcriber = stt.NewWhisper(modelPath)
+		transcriber = stt.NewWhisper(modelPath, threads, beamSize)
 	} else {
-		log.Println("[stt] Whisper server ready on :8080")
+		log.Printf("[stt] Whisper server ready on :8080 (threads=%d beam=%d gpu-layers=%d)", threads, beamSize, gpuLayers)
 		trayMgr.Logf("STT: whisper-server ready on :8080")
 		transcriber = serverWhisper
 		defer serverWhisper.Stop()
@@ -170,4 +176,20 @@ func main() {
 	}
 
 	log.Println("[VoxCtrl] Shutting down.")
+}
+
+func envWithDefault(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+func envIntWithDefault(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
 }

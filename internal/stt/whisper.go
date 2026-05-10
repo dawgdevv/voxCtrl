@@ -8,15 +8,29 @@ import (
 
 type Whisper struct {
 	modelPath string
+	threads   string
+	beamSize  string
 }
 
-func NewWhisper(modelPath string) *Whisper {
-	return &Whisper{modelPath: modelPath}
+func NewWhisper(modelPath string, threads, beamSize int) *Whisper {
+	return &Whisper{
+		modelPath: modelPath,
+		threads:   fmt.Sprintf("%d", threads),
+		beamSize:  fmt.Sprintf("%d", beamSize),
+	}
 }
 
 func (w *Whisper) Transcribe(wavPath string) (string, error) {
-
-	out, err := exec.Command("whisper-cli", "-m", w.modelPath, "-f", wavPath, "--no-timestamps", "--language", "en").Output()
+	// Greedy + max threads = fastest. Use --single-segment for short utterances.
+	out, err := exec.Command("whisper-cli",
+		"-m", w.modelPath,
+		"-f", wavPath,
+		"-t", w.threads,
+		"-bs", w.beamSize,
+		"--no-timestamps",
+		"--language", "en",
+		"-sns",
+	).Output()
 
 	if err != nil {
 		return "", fmt.Errorf("whisper-cli: %w", err)

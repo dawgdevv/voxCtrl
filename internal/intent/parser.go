@@ -20,6 +20,27 @@ func NewParser(r *Registry) *Parser {
 
 const confidenceThreshold = 0.82
 
+var whisperFixes = map[string]string{
+	"muted":       "mute",
+	"volumme":     "volume",
+	"volum":       "volume",
+	"vloume":      "volume",
+	"screenshoot": "screenshot",
+	"screen shot": "screenshot",
+	"terminel":    "terminal",
+	"calender":    "calendar",
+}
+
+func applywhisperFixes(s string) string {
+	words := strings.Fields(strings.ToLower(s))
+	for i, word := range words {
+		if fix, exists := whisperFixes[word]; exists {
+			words[i] = fix
+		}
+	}
+	return strings.Join(words, " ")
+}
+
 // normalize strips punctuation and lowercases a string so that
 // spoken transcripts like "Open Spotify." match "open spotify".
 func normalize(s string) string {
@@ -98,7 +119,8 @@ func tokenMatch(input, target string) float64 {
 }
 
 func (p *Parser) Resolve(transcription string) (executor.Action, float64, error) {
-	input := normalize(transcription)
+	fixed := applywhisperFixes(transcription)
+	input := normalize(fixed)
 	if input == "" {
 		return nil, 0, fmt.Errorf("empty transcript")
 	}

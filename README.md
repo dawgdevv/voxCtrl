@@ -1,4 +1,4 @@
-# VoxCtrl
+# voxCtrl
 
 A local, always-on voice command daemon for Linux. Press a hotkey, speak a command, watch it execute. No cloud. No internet. No data leaves your machine.
 
