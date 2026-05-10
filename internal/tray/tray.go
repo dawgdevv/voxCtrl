@@ -2,7 +2,6 @@ package tray
 
 import (
 	"fmt"
-	"image/color"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +14,11 @@ import (
 // Tray is a native system-tray manager that replaces notify-send.
 // It shows colour-coded status icons and a built-in log viewer.
 type Tray struct {
-	mu            sync.Mutex
-	logs          []string
-	logFile       string
-	logHandle     *os.File
-	quitCh        chan struct{}
+	mu        sync.Mutex
+	logs      []string
+	logFile   string
+	logHandle *os.File
+	quitCh    chan struct{}
 
 	// pre-rendered PNG icons
 	greyIcon  []byte
@@ -48,10 +47,10 @@ func New() *Tray {
 		logFile:   logPath,
 		logHandle: f,
 		quitCh:    make(chan struct{}),
-		greyIcon:  generateCircleIcon(color.RGBA{128, 128, 128, 255}, 64),
-		whiteIcon: generateCircleIcon(color.RGBA{255, 255, 255, 255}, 64),
-		greenIcon: generateCircleIcon(color.RGBA{76, 175, 80, 255}, 64),
-		redIcon:   generateCircleIcon(color.RGBA{244, 67, 54, 255}, 64),
+		greyIcon:  generateIdleIcon(64),
+		whiteIcon: generateActiveIcon(64),
+		greenIcon: generateSuccessIcon(64),
+		redIcon:   generateErrorIcon(64),
 	}
 }
 
