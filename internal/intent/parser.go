@@ -57,12 +57,19 @@ func runeLen(s string) int {
 	return len([]rune(s))
 }
 
-func tooFar(a, b string) bool {
-	dist := edlib.DamerauLevenshteinDistance(a, b)
-	maxLen := runeLen(a)
+func tooFar(input, target string) bool {
+	// If the input is longer than the target, tokenMatch will try to find a
+	// matching window inside the input. Don't reject early based on full-string
+	// distance — that penalises extra words like "please" or "hey".
+	if runeLen(input) > runeLen(target) {
+		return false
+	}
 
-	if runeLen(b) > maxLen {
-		maxLen = runeLen(b)
+	dist := edlib.DamerauLevenshteinDistance(input, target)
+	maxLen := runeLen(input)
+
+	if runeLen(target) > maxLen {
+		maxLen = runeLen(target)
 	}
 
 	if maxLen == 0 {
@@ -90,13 +97,9 @@ func tokenMatch(input, target string) float64 {
 	targetWords := strings.Fields(target)
 	targetLen := len(targetWords)
 
-	if len(inputWords) > targetLen {
-		return 0
-	}
-
 	best := 0.0
 
-	for windowSize := targetLen - 1; windowSize <= targetLen+1; windowSize-- {
+	for windowSize := targetLen - 1; windowSize <= targetLen+1; windowSize++ {
 		if windowSize < 0 {
 			continue
 		}
