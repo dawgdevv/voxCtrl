@@ -15,6 +15,13 @@ func NewRunner(t *tray.Tray) *Runner {
 }
 
 func (r *Runner) Run(action Action) error {
+	// Preflight: validate the action before executing.
+	if err := action.Validate(); err != nil {
+		log.Printf("[Runner] Preflight failed for %q: %v", action.Name(), err)
+		r.tray.Error(err.Error())
+		return err
+	}
+
 	err := action.Execute()
 	if err != nil {
 		log.Printf("[Runner] Error executing action %q: %v", action.Name(), err)

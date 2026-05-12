@@ -197,7 +197,7 @@
     - start spotify
     - play music
     - open music
-  exec: "spotify"
+  exec: "spotify &"
 
 - name: pause music
   aliases:

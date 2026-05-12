@@ -164,7 +164,7 @@ func main() {
 	}()
 
 	// ── Ready ─────────────────────────────────────────────────────────────────
-	trayMgr.Logf("VoxCtrl ready — hold Alt+V to speak")
+	trayMgr.Logf("VoxCtrl ready — hold Ctrl+Alt to speak")
 	log.Println("[VoxCtrl] Daemon running. Ctrl+C to stop.")
 
 	sig := make(chan os.Signal, 1)

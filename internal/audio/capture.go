@@ -37,7 +37,7 @@ func NewRecorder(device string) *Recorder {
 // kills the process, and returns the path to the WAV file.
 //
 // The stop channel is the same hotkeyRelease channel from main —
-// when the user releases Ctrl+Alt+V, this unblocks and recording stops.
+// when the user releases either Ctrl or Alt, this unblocks and recording stops.
 func (r *Recorder) Record(stop <-chan bool) (string, error) {
 	// Clean up any previous recording
 	_ = os.Remove(wavPath)
